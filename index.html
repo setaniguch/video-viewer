@@ -55,19 +55,25 @@
       </div>
     </div>
 
+    <p class="note">
+      ※ ダウンロード抑止は完全ではありません。<br>
+      ※ 画面録画等は防げません。必要に応じてSASの短寿命化をご検討ください。
+    </p>
   </div>
 
   <script>
+    // ★ ここは &amp; ではなく本物の & にしてください（JS文字列）
     const SAS = "sp=r&st=2025-10-21T00:00:00Z&se=2025-11-21T14:59:00Z&spr=https&sv=2024-11-04&sr=c&sig=aYlq1jjxrmOJKGBZzTdnsXDQtD2oBXkfrHJ45m0DA5A%3D";
     const base = "https://stacssa.blob.core.windows.net/videos/";
 
+    // ▼ ファイル名の対応を正しく（Blob上の実ファイル名に合わせる）
     const videos = {
-      chat:       base + "Copilot%20Chat.mp4"        + SAS,
-      word:       base + "Copilot%20in%20Excel.mp4"        + SAS,
-      excel:      base + "Copilot%20in%20Outlook.mp4"       + SAS,
-      outlook:    base + "Copilot%20in%20Power%20Point.mp4"     + SAS,
-      powerpoint: base + "Copilot%20in%20Teams.mp4" + SAS,
-      teams:      base + "Copilot%20in%20Word.mp4"       + SAS
+      chat:       base + "Copilot%20in%20Chat.mp4?"        + SAS,   // ← “in” ありの実名に合わせる
+      word:       base + "Copilot%20in%20Word.mp4?"        + SAS,
+      excel:      base + "Copilot%20in%20Excel.mp4?"       + SAS,
+      outlook:    base + "Copilot%20in%20Outlook.mp4?"     + SAS,
+      powerpoint: base + "Copilot%20in%20Power%20Point.mp4?" + SAS,
+      teams:      base + "Copilot%20in%20Teams.mp4?"       + SAS
     };
 
     const titles = {
@@ -91,6 +97,8 @@
         if (se) {
           const d = new Date(se);
           expiresEl.textContent = `リンク有効期限：${d.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`;
+        } else {
+          expiresEl.textContent = `リンク有効期限：不明`;
         }
       } catch { expiresEl.textContent = `リンク有効期限：不明`; }
     }
@@ -105,8 +113,10 @@
       showExpiry(url);
     }
 
+    // 初期表示
     setVideo('chat');
 
+    // クリックで切替
     buttonsEl.addEventListener('click', e => {
       const btn = e.target.closest('.btn');
       if (!btn) return;
@@ -114,8 +124,9 @@
       if (videos[key]) setVideo(key);
     });
 
+    // エラー通知
     videoEl.addEventListener('error', () => {
-      alert('動画の読み込みに失敗しました。SASの開始時刻前、または期限切れの可能性があります。');
+      alert('動画の読み込みに失敗しました。SASの開始時刻前、期限切れ、CORS未設定、またはURL不一致の可能性があります。');
     });
   </script>
 </body>
