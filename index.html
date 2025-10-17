@@ -1,122 +1,20 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>Copilot 動画視聴</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root { --brand:#2367e8; --bg:#f7f9fc; --text:#1a1a1a; --muted:#6b7280; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; background:var(--bg); color:var(--text); }
-    header { padding:20px; text-align:center; }
-    h1 { margin:0 0 6px; font-size:20px; }
-    .desc { color:var(--muted); font-size:13px; }
-    .wrap { max-width: 1000px; margin: 0 auto; padding: 12px 16px 28px; }
-    .buttons { display:grid; grid-template-columns: repeat(3,1fr); gap:8px; margin:14px 0 16px; }
-    .btn {
-      appearance:none; border:1px solid #d0d7de; border-radius:10px; background:#fff;
-      padding:12px 12px; cursor:pointer; text-align:left; transition:.15s; min-height:64px;
-    }
-    .btn:hover { border-color:var(--brand); }
-    .btn.active { border-color:var(--brand); box-shadow:0 0 0 3px rgba(35,103,232,.15); }
-    .label { display:block; font-weight:600; }
-    .sub { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
-    .player { background:#000; border-radius:12px; overflow:hidden; box-shadow:0 8px 28px rgba(0,0,0,.08); padding:8px; }
-    video { width:100%; height:auto; display:block; }
-    .toolbar { display:flex; justify-content:space-between; align-items:center; color:#e5e7eb; font-size:12px; margin:8px 2px 0; }
-    .note { color:var(--muted); font-size:12px; margin-top:10px; line-height:1.6; }
-    @media (max-width: 760px) { .buttons { grid-template-columns:1fr 1fr; } }
-  </style>
-  <script>
-    document.addEventListener('contextmenu', e => e.preventDefault());
-  </script>
+<meta charset="UTF-8">
+<title>単体テスト（1本）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0;padding:20px;font-family:sans-serif}video{width:100%;max-width:900px}</style>
+<script>document.addEventListener('contextmenu',e=>e.preventDefault());</script>
 </head>
 <body>
-  <header>
-    <h1>Copilot 動画視聴</h1>
-    <p class="desc">リンクを知っている方のみ視聴可能。SASの有効期限内のみ再生できます。</p>
-  </header>
+<h1>単体テスト（1本）</h1>
+<p>このページで 1 本が再生できれば Blob/SAS/CORS はほぼ問題ありません。</p>
 
-  <div class="wrap">
-    <div class="buttons" id="buttons">
-      <button class="btn active" data-key="chat"><span class="label">Copilot Chat</span><span class="sub">会話でアシスト</span></button>
-      <button class="btn" data-key="word"><span class="label">Word</span><span class="sub">文書作成を支援</span></button>
-      <button class="btn" data-key="excel"><span class="label">Excel</span><span class="sub">集計・分析を自動化</span></button>
-      <button class="btn" data-key="outlook"><span class="label">Outlook</span><span class="sub">メール自動作成</span></button>
-      <button class="btn" data-key="powerpoint"><span class="label">PowerPoint</span><span class="sub">伝わるスライド作成</span></button>
-      <button class="btn" data-key="teams"><span class="label">Teams</span><span class="sub">会議・チャット連携</span></button>
-    </div>
+<video id="v" controls controlsList="nodownload" disablePictureInPicture preload="none" playsinline>
+  <!-- ★ ここに “完全な” SAS 付きURLを 1 本だけ貼る -->
+  https://stacssa.blob.core.windows.net/videos/Copilot%20in%20Chat.mp4?sp=r&st=2025-10-21T00:00:00Z&se=2025-11-21T14:59:00Z&spr=https&sv=2024-11-04&sr=c&sig=aYlq1jjxrmOJKGBZzTdnsXDQtD2oBXkfrHJ45m0DA5A%3D
+</video>
 
-    <div class="player">
-      <video id="video" controls controlsList="nodownload" disablePictureInPicture preload="none" playsinline></video>
-      <div class="toolbar">
-        <div id="currentTitle">Copilot Chat</div>
-        <div id="expires">リンク有効期限：読み込み後に表示</div>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    const SAS = "sp=r&st=2025-10-21T00:00:00Z&se=2025-11-21T14:59:00Z&spr=https&sv=2024-11-04&sr=c&sig=aYlq1jjxrmOJKGBZzTdnsXDQtD2oBXkfrHJ45m0DA5A%3D";
-    const base = "https://stacssa.blob.core.windows.net/videos/";
-
-    const videos = {
-      chat:       base + "Copilot%20in%20Chat.mp4?"        + SAS,
-      word:       base + "Copilot%20in%20Word.mp4?"        + SAS,
-      excel:      base + "Copilot%20in%20Excel.mp4?"       + SAS,
-      outlook:    base + "Copilot%20in%20Outlook.mp4?"     + SAS,
-      powerpoint: base + "Copilot%20in%20Power%20Point.mp4?" + SAS,
-      teams:      base + "Copilot%20in%20Teams.mp4?"       + SAS
-    };
-
-    const titles = {
-      chat: "Copilot Chat",
-      word: "Word",
-      excel: "Excel",
-      outlook: "Outlook",
-      powerpoint: "PowerPoint",
-      teams: "Teams"
-    };
-
-    const videoEl = document.getElementById('video');
-    const buttonsEl = document.getElementById('buttons');
-    const currentTitleEl = document.getElementById('currentTitle');
-    const expiresEl = document.getElementById('expires');
-
-    function showExpiry(url) {
-      try {
-        const u = new URL(url);
-        const se = u.searchParams.get('se');
-        if (se) {
-          const d = new Date(se);
-          expiresEl.textContent = `リンク有効期限：${d.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`;
-        }
-      } catch { expiresEl.textContent = `リンク有効期限：不明`; }
-    }
-
-    function setVideo(key) {
-      const url = videos[key];
-      currentTitleEl.textContent = titles[key] || key;
-      videoEl.src = url;
-      videoEl.load();
-      videoEl.play().catch(() => {});
-      document.querySelectorAll('.btn').forEach(btn => btn.classList.toggle('active', btn.dataset.key === key));
-      showExpiry(url);
-    }
-
-    setVideo('chat');
-
-    buttonsEl.addEventListener('click', e => {
-      const btn = e.target.closest('.btn');
-      if (!btn) return;
-      const key = btn.dataset.key;
-      if (videos[key]) setVideo(key);
-    });
-
-    videoEl.addEventListener('error', () => {
-      alert('動画の読み込みに失敗しました。SASの開始時刻前、または期限切れの可能性があります。');
-    });
-  </script>
 </body>
 </html>
