@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>動画視聴ページ</title>
+<style>
+  body { text-align: center; margin-top: 50px; }
+  video { width: 80%; max-width: 800px; }
+  body, video { user-select: none; }
+</style>
+<script>
+  document.addEventListener('contextmenu', e => e.preventDefault()); // 右クリック禁止
+</script>
+</head>
+<body>
+<h1>動画視聴</h1>
+<video controls controlsList="nodownload" disablePictureInPicture>
+  https://<account>.blob.core.windows.net/videos/sample.mp4?<SAS>
+</video>
+<p>※ダウンロードは禁止されています</p>
+</body>
+</html>
