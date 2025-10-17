@@ -23,4 +23,132 @@
     .toolbar { display:flex; justify-content:space-between; align-items:center; color:#e5e7eb; font-size:12px; margin:8px 2px 0; gap:8px; }
     .url { color:#9ca3af; font-size:11px; overflow:auto; white-space:nowrap; max-width:60%; }
     .diag { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-top:16px; font-size:13px; }
-    .ok { color:#16a34a; } .warn { color:#d97706; } .err { color
+    .ok { color:#16a34a; } .warn { color:#d97706; } .err { color:#dc2626; }
+    @media (max-width: 760px) { .buttons { grid-template-columns:1fr 1fr; } .url { max-width:100%; } }
+  </style>
+  <script>document.addEventListener('contextmenu', e => e.preventDefault());</script>
+</head>
+<body>
+  <header>
+    <h1>Copilot 動画視聴（診断付き）</h1>
+    <p class="desc">リンクを知っている方のみ視聴可能。SASの有効期限内のみ再生できます。</p>
+  </header>
+
+  <div class="wrap">
+    <div class="buttons" id="buttons"></div>
+
+    <div class="player">
+      <video id="video" controls controlsList="nodownload" disablePictureInPicture preload="none" playsinline></video>
+      <div class="toolbar">
+        <div id="currentTitle">—</div>
+        <div id="expires">リンク有効期限：読み込み後に表示</div>
+        <div id="currentUrl" class="url">URL: —</div>
+      </div>
+    </div>
+
+    <div class="diag" id="diag">
+      <b>接続テスト</b><br>
+      <small>各動画URLに HEAD リクエストを投げ、HTTPステータスを表示します（<span class="ok">200=OK</span>／<span class="err">403=SAS未開始・期限切れ・権限不足</span>／<span class="err">404=ファイル名不一致</span>／CORSエラーは「error」表示）</small>
+      <div id="diagRows" style="margin-top:8px;"></div>
+    </div>
+
+    <p class="desc" style="margin-top:10px">
+      ※ CORS：Blob 側で <code>https://&lt;your-app&gt;.azurestaticapps.net</code> をオリジン許可（GET／*／*）してください。<br>
+      ※ SAS：開始時刻は <b>UTC</b> です。JST=UTC+9。
+    </p>
+  </div>
+
+  <script>
+    // ★ あなたの最新SASに差し替え可（今すぐ試すなら st は省略するか、UTC現在時刻より前に）
+    const SAS = "sp=r&st=2025-10-21T00:00:00Z&se=2025-11-21T14:59:00Z&spr=https&sv=2024-11-04&sr=c&sig=aYlq1jjxrmOJKGBZzTdnsXDQtD2oBXkfrHJ45m0DA5A%3D";
+    const base = "https://stacssa.blob.core.windows.net/videos/";
+
+    // コンテナにある6本（Outlookあり）
+    const items = [
+      { key:"chat",       label:"Copilot Chat",  sub:"会話でアシスト",     file:"Copilot in Chat.mp4" },
+      { key:"word",       label:"Word",          sub:"文書作成を支援",     file:"Copilot in Word.mp4" },
+      { key:"excel",      label:"Excel",         sub:"集計・分析を自動化", file:"Copilot in Excel.mp4" },
+      { key:"outlook",    label:"Outlook",       sub:"メール自動作成",     file:"Copilot in Outlook.mp4" },
+      { key:"powerpoint", label:"PowerPoint",    sub:"伝わるスライド作成", file:"Copilot in Power Point.mp4" },
+      { key:"teams",      label:"Teams",         sub:"会議・チャット連携", file:"Copilot in Teams.mp4" }
+    ];
+
+    const buttonsEl = document.getElementById('buttons');
+    const videoEl   = document.getElementById('video');
+    const titleEl   = document.getElementById('currentTitle');
+    const expiresEl = document.getElementById('expires');
+    const urlEl     = document.getElementById('currentUrl');
+    const diagRows  = document.getElementById('diagRows');
+
+    const buildUrl = (file) => `${base}${encodeURIComponent(file)}?${SAS}`;
+
+    // ボタン生成（items が唯一の情報源）
+    items.forEach((it, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (i===0 ? ' active' : '');
+      btn.dataset.key = it.key;
+      btn.innerHTML = `<span class="label">${it.label}</span><span class="sub">${it.sub}</span>`;
+      buttonsEl.appendChild(btn);
+    });
+
+    function showExpiry(url) {
+      try {
+        const u = new URL(url);
+        const se = u.searchParams.get('se');
+        if (se) {
+          const d = new Date(se);
+          const jp = d.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+          expiresEl.textContent = `リンク有効期限：${jp}`;
+        } else {
+          expiresEl.textContent = 'リンク有効期限：不明';
+        }
+      } catch { expiresEl.textContent = 'リンク有効期限：不明'; }
+    }
+
+    function setVideoByKey(key) {
+      const it = items.find(x => x.key === key);
+      if (!it) return;
+      const url = buildUrl(it.file);
+      titleEl.textContent = it.label;
+      urlEl.textContent   = `URL: ${url}`;
+      videoEl.src = url;
+      videoEl.load();
+      videoEl.play().catch(()=>{});
+      document.querySelectorAll('.btn').forEach(b => b.classList.toggle('active', b.dataset.key === key));
+      showExpiry(url);
+    }
+
+    // 初期表示（先頭＝Chat）
+    setVideoByKey(items[0].key);
+
+    // クリックで切替
+    buttonsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn');
+      if (!btn) return;
+      setVideoByKey(btn.dataset.key);
+    });
+
+    // 接続テスト（各URLへHEAD）
+    async function quickCheck() {
+      for (const it of items) {
+        const url = buildUrl(it.file);
+        const row = document.createElement('div');
+        row.textContent = `${it.label.padEnd(12,' ')} → checking...`;
+        diagRows.appendChild(row);
+        try {
+          const r = await fetch(url, { method: 'HEAD' }); // CORS許可必須
+          const cls = (r.status===200) ? 'ok' : (r.status===403 || r.status===404) ? 'err' : 'warn';
+          row.innerHTML = `<span class="${cls}">${it.label.padEnd(12,' ')}</span> → ${r.status}`;
+        } catch (e) {
+          row.innerHTML = `<span class="err">${it.label.padEnd(12,' ')}</span> → error (${e.message})`;
+        }
+      }
+    }
+    quickCheck();
+
+    videoEl.addEventListener('error', () => {
+      alert('動画の読み込みに失敗しました。SASの開始時刻前、期限切れ、CORS未設定、またはURLの不一致の可能性があります。');
+    });
+  </script>
+</body>
+</html>
